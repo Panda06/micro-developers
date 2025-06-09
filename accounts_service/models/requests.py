@@ -1,13 +1,13 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Field, validator
 
 class Address(BaseModel):
-    region: str
-    city: str
-    street: str
-    house: str
-    apartment: str
-    residents_count: int
-    area: float
+    region: str = Field(..., description="Region")
+    city: str = Field(..., description="City")
+    street: str = Field(..., description="Street")
+    house: str = Field(..., description="House")
+    apartment: str = Field(..., description="Apartment")
+    residents_count: int = Field(..., description="Residents count")
+    area: float = Field(..., description="Area")
     
     @validator('area')
     def validate_area(cls, v):

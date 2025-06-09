@@ -41,7 +41,7 @@ async def add_account(
 
     if existing:
         raise HTTPException(
-            status_code=400, detail="Account with this number already exists"
+            status_code=409, detail="Account with this number already exists"
         )
 
     address_data = account.address
@@ -175,3 +175,14 @@ async def get_providers(
     providers = db.query(Provider).all()
     return providers
 
+
+@router.get('/has-access')
+async def has_access_to_account(
+    account_id: int,
+    db: Session = Depends(get_db),
+    current_user: int = Depends(get_current_user)
+):
+    account = db.query(Account).filter(Account.id == account_id, Account.user_id == current_user).first()
+    if account is None:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return {"has_access": True}
