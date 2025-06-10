@@ -24,6 +24,6 @@ class ReceiptDataRequest(BaseModel):
     last_name: str = Field(...)
     middle_name: str = Field(...)
     address: AddressRequest = Field(...)
-    paid_at: datetime = Field(...)
-    amount: float = Field(...)
+    period: str = Field(...)
+    total_amount: float = Field(...)
     # created_at: datetime
