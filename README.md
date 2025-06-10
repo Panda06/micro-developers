@@ -5,7 +5,7 @@
 
 ## Стек технологий
 
-- Backend: Django, FastAPI
+- Backend: FastAPI
 - Frontend:
 - Database: PostgreSQL
 - Containerization: Docker & Docker Compose
