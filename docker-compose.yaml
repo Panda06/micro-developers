@@ -33,7 +33,7 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
-
+    
   payment-service:
     build:
       context: ./payment_service
