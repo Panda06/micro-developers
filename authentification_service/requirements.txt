@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+httpx
+loguru
+pydantic
+pydantic-settings
+alembic
+psycopg2
