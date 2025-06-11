@@ -1,12 +1,15 @@
 import jwt
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer, KeepTogether
+from fastapi.responses import StreamingResponse
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
 from reportlab.pdfbase import pdfmetrics
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
+from models.schemes import BillRequest
 from io import BytesIO
 
 
@@ -48,13 +51,12 @@ def generate_pdf(data):
 
     elements.append(Paragraph(f'Период оплаты: {data["period"]}', style=styles['content']))
     elements.append(Spacer(1, 30))
-    #elements.append(Paragraph(f'Итоговая сумма: {data["total_amount"]}'))
     
     services_table_data = [['Услуга', 'Количество', 'Цена за ед.', 'Сумма']]
 
     for service in data['services']:
         row = []
-        for column_name in ['name', 'quantilty', 'price', 'amount']:
+        for column_name in ['service_name', 'units', 'cost_per_unit', 'total_cost']:
             row.append(Paragraph(str(service[column_name]), style=styles['content']))
 
         services_table_data.append(row)
@@ -91,6 +93,22 @@ def generate_pdf(data):
     buffer.seek(0)
     return buffer
 
-@router.post("/receipt")
-def generate_receipt(data, current_user = Depends(get_current_user)):
-    pass
+@router.post("/")
+async def generate_receipt(data: BillRequest, current_user = Depends(get_current_user)):
+    data = data.model_dump()
+    address_model = data['address']
+    
+    address = f"{address_model['region']}, {address_model['city']}, ул. {address_model['street']}, д. {address_model['house']}, кв. {address_model['apartment']}"
+
+    data['address'] = address
+    
+    data['created_at'] = datetime.now()
+
+    buffer = generate_pdf(data)
+
+    headers = {'Content-Disposition': 'inline; filename="receipt.pdf"',"content-type": "application/octet-stream"}
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers=headers
+    )
