@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, create_engine
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, create_engine, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -16,6 +16,10 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    keycloack_id = Column(String, nullable=False)
 
 class Account(Base):
     __tablename__ = "accounts"
@@ -26,7 +30,19 @@ class Account(Base):
     address_id = Column(Integer, nullable=False)
     provider_id = Column(Integer, nullable=False)
     is_active = Column(Boolean, default=False)
+    is_deleted = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
+
+
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+    
+    user_id = Column(Integer, primary_key=True, index=True)
+    last_name = Column(String, nullable=False)
+    first_name = Column(String, nullable=False)
+    middle_name = Column(String, nullable=False)
+    birth_date = Column(Date, nullable=False)
+    gender = Column(String, nullable=False)
 
 
 class UserAddress(Base):
@@ -37,8 +53,8 @@ class UserAddress(Base):
     city = Column(String, nullable=False)
     street = Column(String, nullable=False)
     house = Column(String, nullable=False)
-    apartment = Column(String, nullable=False)
-    residents_count = Column(Integer, nullable=False)
+    flat = Column(String, nullable=False)
+    residents_counts = Column(Integer, nullable=False)
     area = Column(Float, nullable=False)
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
 

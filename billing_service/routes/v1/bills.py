@@ -1,14 +1,14 @@
-from datetime import datetime, timezone
-from typing import List, Optional
+import logging
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from models.database import Bill, Service, get_db
-from models.requests import BillRequest
-from models.responses import BillResponse, ServiceResponse
+from models.database import Account, Bill, Service, get_db
+from models.requests import PayBillRequest
+from models.responses import BillResponse, ServiceResponse, UnpaidPeriodsResponse
 from sqlalchemy.orm import Session
 
+logger = logging.getLogger("billing_service.routes")
 router = APIRouter()
 security = HTTPBearer()
 
@@ -20,27 +20,32 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
-        return int(user_id)
+        return user_id
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
 @router.get("/", response_model=BillResponse)
-async def get_bills(
-    bill_request: BillRequest,
+async def get_bill(
+    account_number: str,
+    period: str,
     db: Session = Depends(get_db),
     current_user: int = Depends(get_current_user),
 ):
+    logger.info(f"Getting bill for account {account_number}, period {period}")
+    
     bills = (
         db.query(Bill)
+        .join(Account, Account.id == Bill.account_id)
         .filter(
-            Bill.account_number == bill_request.account_number,
-            Bill.period == bill_request.period,
+            Account.account_number == account_number,
+            Bill.period == period,
         )
         .all()
     )
 
     if not bills:
+        logger.warning(f"Bill not found for account {account_number}, period {period}")
         raise HTTPException(status_code=404, detail="Bill not found")
     
     services = db.query(Service).filter(Service.id.in_([bill.service_id for bill in bills])).all()
@@ -54,13 +59,44 @@ async def get_bills(
             units=bill.units,
             total_cost=bill.amount
         ))
-
+    
+    logger.info(f"Found {len(bills)} bills for account {account_number}, period {period}")
     return BillResponse(
-        account_number=bill_request.account_number,
-        period=bill_request.period,
-        amount=sum([bill.amount for bill in bills]),
-        status=bills[0].status,
-        created_at=bills[0].created_at,
-        paid_at=bills[0].paid_at,
+        account_number=account_number,
+        period=period,
+        total_amount=sum([bill.amount for bill in bills]),
+        status=bills[0].status_type,
         services=services_responses
+    )
+
+@router.get("/unpaid-periods", response_model=UnpaidPeriodsResponse)
+async def get_not_paid_periods(
+    account_number: str,
+    db: Session = Depends(get_db),
+    current_user: int = Depends(get_current_user),
+):
+    logger.info(f"Getting unpaid periods for account {account_number}")
+
+    account = db.query(Account).filter(Account.account_number == account_number).first()
+    if not account:
+        logger.error(f"Account not found: {account_number}")
+        raise HTTPException(status_code=404, detail="Account not found")
+    
+    unpaid_periods = (
+        db.query(Bill.period)
+        .filter(
+            Bill.account_id == account.id,
+            Bill.status_type != "paid"
+        )
+        .distinct()
+        .order_by(Bill.period)
+        .all()
+    )
+    
+    periods_list = [str(period[0]) for period in unpaid_periods]
+
+    logger.info(f"Found {len(periods_list)} unpaid periods for account {account_number}")
+    return UnpaidPeriodsResponse(
+        account_number=account_number,
+        unpaid_periods=periods_list
     )
