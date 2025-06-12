@@ -1,8 +1,4 @@
 fastapi
 uvicorn
-httpx
-loguru
-pydantic
-pydantic-settings
-alembic
-psycopg2
+fastapi_keycloak
+dotenv
