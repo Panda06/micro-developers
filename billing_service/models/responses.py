@@ -16,6 +16,11 @@ class BillResponse(BaseModel):
     period: str
     total_amount: float
     status: str
-    created_at: datetime
-    paid_at: Optional[datetime]
+    # created_at: datetime
+    # paid_at: Optional[datetime]
     services: List[ServiceResponse]
+
+
+class UnpaidPeriodsResponse(BaseModel):
+    account_number: str
+    unpaid_periods: List[str]
