@@ -25,6 +25,10 @@ def keycloak_token_url():
     return f"{os.getenv('KEYCLOAK_BASE_URL')}/realms/{os.getenv('KEYCLOAK_REALM')}/protocol/openid-connect/token"
 
 
+def keycloak_logout_url():
+    return f"{os.getenv('KEYCLOAK_BASE_URL')}/realms/{os.getenv('KEYCLOAK_REALM')}/protocol/openid-connect/logout"
+
+
 async def refresh_access_token(refresh_token: str):
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -105,6 +109,27 @@ def get_current_user(user: OIDCUser = Depends(idp.get_current_user())):
 @app.get("/login")
 def login_redirect():
     return RedirectResponse(idp.login_uri)
+
+
+@app.get("/logout")
+async def logout(request: Request):
+    refresh_token = request.cookies.get("refresh_token")
+
+    async with httpx.AsyncClient() as client:
+        await client.post(
+            keycloak_logout_url(),
+            data={
+                "client_id": os.getenv("CLIENT_ID"),
+                "client_secret": os.getenv("CLIENT_SECRET"),
+                "refresh_token": refresh_token,
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+
+    response = RedirectResponse(url="/login")
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+    return response
 
 
 @app.get("/callback")

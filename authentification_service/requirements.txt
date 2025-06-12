@@ -2,3 +2,6 @@ fastapi
 uvicorn
 fastapi_keycloak
 dotenv
+starlette
+httpx
+pydantic
