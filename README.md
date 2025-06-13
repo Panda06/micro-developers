@@ -48,3 +48,18 @@ docker-compose down
 ```bash
 docker-compose down -v
 ```
+
+Проверьте, установлен ли уже:
+
+
+```bash 
+node -v
+npm -v 
+```
+Если нету, то установите.
+```bash
+
+cd smart-zhkh
+
+npm run dev
+```
