@@ -35,6 +35,17 @@ services:
         condition: service_healthy
     restart: unless-stopped
     
+  report_service:
+    build:
+      context: ./report_service
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   payment-service:
     build:
       context: ./payment_service
