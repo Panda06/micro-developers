@@ -149,3 +149,5 @@ services:
 
 Убедитесь, что в FastAPI используются те же `client_id`, `client_secret` и `redirect_uri`.
 
+--- 
+![Схема архитектуры](.images/database.png)
